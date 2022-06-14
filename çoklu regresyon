@@ -1,0 +1,65 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import sklearn as sk
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn import preprocessing
+import statsmodels.api as sm
+
+veriler = pd.read_csv('veriler.csv')
+
+le = preprocessing.LabelEncoder()
+Yas = veriler.iloc[:,1:4].values
+
+#ülke isimlerini numerik değere çevirme
+ulke = veriler.iloc[:,0:1].values
+ulke[:,0] = le.fit_transform(veriler.iloc[:,0])
+
+ohe = preprocessing.OneHotEncoder()
+ulke = ohe.fit_transform(ulke).toarray()
+
+#cinsiyet verilerini nümerik değere çevirme
+c = veriler.iloc[:,-1:].values
+c [:,-1] = le.fit_transform(veriler.iloc[:,-1])
+
+ohe = preprocessing.OneHotEncoder()
+c = ohe.fit_transform(c).toarray()
+
+#numpy dizileri dataframe dönüşümü
+sonuc = pd.DataFrame (data=ulke, index= range(22),columns = ['fr','tr','us'])
+#ülke isimlerini numaralandırıp 3 sütünlu hale geridik 22 satır sayısı
+sonuc2 = pd.DataFrame (data=Yas, index= range(22),columns = ["boy", "kilo", "yas"])
+sonuc3 = pd.DataFrame (data=c[:,:1], index= range(22),columns = ['cinsiyet'])
+#data frame birleştirme işlemi
+s = pd.concat([sonuc, sonuc2], axis=1)
+s2 = pd.concat([s, sonuc3], axis=1)
+boy = s2.iloc[:,3:4]
+sol = s2.iloc[:,:3]
+sağ = s2.iloc[:,4:]
+egitim = pd.concat([sol,sağ], axis=1)
+#s=veriler cinsiyet yok
+#s2= verilerin tamamı
+#sonuc3= cinsiyet
+
+sc=StandardScaler()
+
+regressor = LinearRegression()
+
+
+X = np.append(arr = np.ones((22,1)).astype(int), values=egitim, axis=1)
+#backwards elimination
+X_l = egitim.iloc[:,[0,1,2,3]].values
+X_l = np.array(X_l,dtype=float)
+
+model = sm.OLS(boy,X_l).fit()
+#print(model.summary())
+sonegitim=egitim.iloc[:,:4].values
+
+x_train, x_test, y_train, y_test = train_test_split(sonegitim,boy,test_size=0.2, random_state=0)
+regressor.fit(x_train,y_train)
+y_pred = regressor.predict(x_test)
+print(y_pred)
+print (y_test)
